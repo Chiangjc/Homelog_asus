@@ -1,0 +1,27 @@
+# HomeLog configuration
+
+# "ollama" = real models through the Ollama chat API; "stub" = placeholder text for testing.
+backend: ollama
+
+# Laptop: Ollama on port 11434.
+# UGen300 (Stage II): Hailo-Ollama exposes the same API, default port 8000.
+vlm:
+  base_url: http://localhost:11434
+  model: qwen3-vl:2b-instruct   # instruct, not thinking. Hailo-10H counterpart: Qwen3-VL-2B-Instruct
+  timeout: 180
+  max_tokens: 60            # one short line; also stops a runaway answer quickly
+llm:
+  base_url: http://localhost:11434
+  model: qwen3:1.7b         # Hailo-10H counterpart: Qwen3-1.7B-Instruct / Qwen2.5-1.5B-Instruct
+  timeout: 180
+  max_tokens: 400
+
+language: en                # en | zh-TW
+
+# Demo clips are short, so sample often. A real deployment samples every 30-60 s.
+sample_every_sec: 4
+motion_threshold: 0.01      # fraction of pixels that must change to wake the VLM
+heartbeat_sec: 8            # still describe a still scene this often (real deployment: ~300)
+
+log_path: data/homelog.log  # encrypted, one entry per line
+key_path: ~/.homelog/key

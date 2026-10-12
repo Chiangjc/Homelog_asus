@@ -1,0 +1,23 @@
+# Test with your own footage (not for the demo video, never commit it).
+# 1. Record a short clip on your phone (30 s to 2 min is plenty): eat something,
+#    walk around, sit down, lie on the sofa. Get consent from anyone on camera.
+# 2. Save it as samples/mine/clip1.mp4 (add clip2.mp4 etc. and more segments if you like).
+# 3. python run_day.py --scenario scenarios/my_video.yaml --out data/test/day.json
+
+title: "My own test"
+report_at: "14:00"
+footage_credit: "Own test recording. Not for publication."
+
+routine:
+  name: Mom
+  awake_from: "07:00"
+  awake_to: "22:00"
+  inactivity_alert_minutes: 180
+  meals:
+    - {name: breakfast, from: "07:00", to: "09:00"}
+    - {name: lunch,     from: "11:30", to: "13:30"}
+    - {name: dinner,    from: "17:30", to: "19:30"}
+
+segments:
+  - {type: video, clock: "12:00", span_minutes: 30, file: samples/mine/clip1.mp4, label: "Living room"}
+  - {type: idle,  from: "12:30", to: "14:00", note: "No motion detected. VLM idle."}

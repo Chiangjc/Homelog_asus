@@ -1,0 +1,30 @@
+# The demo scenario (default for `python run_day.py`).
+# A day built from the ETRI sample clips, each used once, back to back:
+# breakfast, cleaning, laundry. Then no motion until 2 p.m.:
+# the trigger stays quiet, the VLM never runs, the inactivity rule fires,
+# and lunch (11:30-13:30) passes with no activity.
+#   clock         the time of day the clip stands for
+#   span_minutes  how many minutes of the day the clip represents
+#   idle          a stretch with no motion: the VLM is not called at all
+# The bathroom clip (etri_10) is left out on purpose: HomeLog is not meant
+# to be installed in a bathroom.
+
+title: "A day at Mom's house"
+report_at: "14:00"   # after the lunch window (11:30-13:30), so a missed lunch is caught
+footage_credit: "Footage: ETRI-Activity3D sample videos (ETRI), faces blurred by the dataset authors."
+
+routine:              # set by the family
+  name: Mom
+  awake_from: "07:00"
+  awake_to: "22:00"
+  inactivity_alert_minutes: 180
+  meals:
+    - {name: breakfast, from: "07:00", to: "09:00"}
+    - {name: lunch,     from: "11:30", to: "13:30"}
+    - {name: dinner,    from: "17:30", to: "19:30"}
+
+segments:
+  - {type: video, clock: "07:00", span_minutes: 15, file: samples/etri/etri_1.mp4,  label: "Living room"}
+  - {type: video, clock: "07:15", span_minutes: 30, file: samples/etri/etri_24.mp4, label: "Living room"}
+  - {type: video, clock: "07:45", span_minutes: 30, file: samples/etri/etri_29.mp4, label: "Living room"}
+  - {type: idle,  from: "08:15", to: "14:00", note: "No motion detected. VLM idle."}

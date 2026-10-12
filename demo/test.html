@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HomeLog Demo</title>
+<style>
+  :root {
+    --ink: #1F2A2E; --paper: #F7F4EE; --card: #FFFDF9; --line: #DDD5C8;
+    --muted: #6B7275; --accent: #A4532A; --accent-soft: #F7E3D6; --ok: #2F6F4E;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--paper);
+    font-family: -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", Arial, sans-serif; }
+  .app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; padding: 24px 32px; gap: 20px; }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: baseline; gap: 16px; }
+  .brand h1 { margin: 0; font-family: Georgia, "Noto Serif TC", serif; font-size: 34px; font-weight: 600; }
+  .brand span { color: #C9D3D1; font-size: 16px; }
+  .clock { font-family: Georgia, serif; font-size: 52px; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+  .clock small { display: block; font-family: inherit; font-size: 14px; color: #C9D3D1; text-align: right; letter-spacing: 0; }
+  main { display: grid; grid-template-columns: 1.45fr 1fr; gap: 24px; min-height: 0; }
+  .stage { position: relative; background: #11181B; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .stage video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .tag { position: absolute; top: 16px; left: 16px; background: rgba(17,24,27,.75); padding: 8px 14px; border-radius: 999px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #E0603A; box-shadow: 0 0 0 4px rgba(224,96,58,.25); }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .shot { position: absolute; inset: 14px; border: 4px solid #E3A37D; border-radius: 12px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .shot.on { opacity: 1; }
+  .shot .label { position: absolute; top: 12px; right: 12px; background: #E3A37D; color: #1F2A2E; font-weight: 700; font-size: 16px; padding: 6px 12px; border-radius: 999px; }
+  .caption { position: absolute; left: 24px; right: 24px; bottom: 24px; background: rgba(247,244,238,.96); color: var(--ink); border-radius: 14px; padding: 16px 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .caption .who { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  .caption .txt { font-size: 24px; line-height: 1.35; min-height: 32px; }
+  .caption .stamp { margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--ok); opacity: 0; transition: opacity .25s; }
+  .caption .stamp.on { opacity: 1; }
+  .stage.frozen video { filter: brightness(.9); }
+  .stage .demo-note { position: absolute; left: 16px; bottom: 8px; font-size: 12px; color: rgba(247,244,238,.7); }
+  .entry.fresh { box-shadow: 0 0 0 3px #E3A37D; }
+  .idle { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #11181B; text-align: center; }
+  .idle .big { font-family: Georgia, serif; font-size: 44px; }
+  .idle .sub { color: #C9D3D1; font-size: 20px; }
+  .log { background: var(--paper); color: var(--ink); border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; min-height: 0; }
+  .log h2 { margin: 0 0 4px; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .log .note { margin: 0 0 14px; font-size: 14px; color: var(--muted); }
+  .entries { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+  .entry { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; animation: in .45s ease-out both; }
+  .entry.idle-row { background: #EDE8DF; border-style: dashed; color: var(--muted); }
+  .entry.alert { border: 2px solid var(--accent); }
+  .entry .row { display: flex; gap: 12px; align-items: baseline; }
+  .entry time { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 52px; }
+  .entry p { margin: 0; font-size: 19px; line-height: 1.35; }
+  .entry .meta { margin-top: 6px; display: flex; gap: 10px; font-size: 13px; color: var(--muted); }
+  .badge { display: inline-flex; gap: 6px; align-items: center; color: var(--ok); font-weight: 700; }
+  .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  footer { display: flex; justify-content: space-between; color: #C9D3D1; font-size: 14px; }
+  .phone-wrap { position: fixed; inset: 0; background: rgba(17,24,27,.72); display: none; align-items: center; justify-content: center; }
+  .phone { width: 430px; background: var(--paper); color: var(--ink); border-radius: 40px; padding: 28px 24px 30px; border: 10px solid #0B1012; box-shadow: 0 30px 80px rgba(0,0,0,.5); animation: in .5s ease-out both; }
+  .phone .app-name { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+  .phone h3 { margin: 0 0 12px; font-family: Georgia, serif; font-size: 26px; }
+  .phone .text { font-size: 18px; line-height: 1.5; margin: 0 0 16px; }
+  .phone .flag { background: var(--accent-soft); color: #6E3519; border-radius: 10px; padding: 10px 12px; font-size: 15px; line-height: 1.4; margin-top: 8px; }
+  .phone .foot { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .controls { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(247,244,238,.95); color: var(--ink); border-radius: 999px; padding: 10px 18px; display: flex; gap: 14px; align-items: center; font-size: 15px; transition: opacity .3s; }
+  .controls button { font: inherit; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 8px 18px; cursor: pointer; }
+  .controls.hidden { opacity: 0; pointer-events: none; }
+  .stub { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-18deg); font-size: 90px; font-weight: 800; color: rgba(224,96,58,.28); pointer-events: none; white-space: nowrap; display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>HomeLog</h1><span id="sub">On-device prototype</span></div>
+    <div class="clock"><span id="clock">--:--</span><small id="room">&nbsp;</small></div>
+  </header>
+  <main>
+    <section class="stage">
+      <video id="video" muted playsinline></video>
+      <div class="tag"><span class="dot"></span><span id="tag">Camera · processed on device</span></div>
+      <div class="flash" id="flash"></div>
+      <div class="shot" id="shot"><span class="label" id="shotLabel">Frame sent to the on-device VLM</span></div>
+      <div class="caption" id="caption">
+        <div class="who" id="capWho">VLM · on device</div>
+        <div class="txt" id="capTxt"></div>
+        <div class="stamp" id="capStamp">Frame deleted · only this line is kept</div>
+      </div>
+      <div class="demo-note" id="demoNote">Video shown for this demo only. HomeLog never stores or sends it.</div>
+      <div class="idle" id="idle">
+        <div class="big" id="idleBig"></div>
+        <div class="sub" id="idleSub">No motion detected · the VLM stays idle</div>
+      </div>
+    </section>
+    <section class="log">
+      <h2 id="logTitle">Activity log</h2>
+      <p class="note" id="logNote">Each frame becomes one sentence, then the frame is deleted. Only text is kept.</p>
+      <div class="entries" id="entries"></div>
+    </section>
+  </main>
+  <footer><span id="credit"></span><span id="models"></span></footer>
+</div>
+
+<div class="phone-wrap" id="phoneWrap">
+  <div class="phone">
+    <div class="app-name"><span>HomeLog</span><span id="sentAt"></span></div>
+    <h3 id="phoneTitle">Today at Mom's</h3>
+    <p class="text" id="summary"></p>
+    <div id="flags"></div>
+    <div class="foot" id="phoneFoot">Text only. No video was stored or sent.</div>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <button id="start">Start</button>
+  <label>Speed <select id="speed"><option>1</option><option>1.5</option><option>2</option><option>4</option></select>x</label>
+  <span>Space: start · R: restart · H: hide this bar</span>
+</div>
+<div class="stub" id="stub">STUB OUTPUT</div>
+
+<script src="../data/test/day.js"></script>
+<script>
+(() => {
+  const D = window.HOMELOG_DAY;
+  const $ = id => document.getElementById(id);
+  if (!D) { document.body.innerHTML = '<p style="padding:40px;font-size:22px">No demo data. Run <code>python run_day.py</code> first.</p>'; return; }
+
+  const zh = D.meta.language === 'zh-TW';
+  const T = zh ? {
+    sub: '本機運算雛形', tag: '攝影機 · 在裝置上處理', logTitle: '活動紀錄',
+    logNote: '每張畫面寫成一句話後立即刪除，只保留文字。', deleted: '畫面已刪除',
+    idleSub: '沒有偵測到動作 · VLM 待機中', idleRow: '沒有活動，VLM 待機',
+    phoneTitle: `${'今天'}`, foot: '只有文字，沒有儲存或傳送任何影像。', sent: '傳送時間',
+    shot: '這張畫面送進裝置上的 VLM', who: 'VLM · 在裝置上', describing: '描述中…',
+    stamp: '畫面已刪除 · 只保留這一句', note: '影片僅供展示。HomeLog 不會儲存或傳送任何影像。',
+  } : {
+    sub: 'On-device prototype', tag: 'Camera · processed on device', logTitle: 'Activity log',
+    logNote: 'Each frame becomes one sentence, then the frame is deleted. Only text is kept.', deleted: 'Frame deleted',
+    idleSub: 'No motion detected · the VLM stays idle', idleRow: 'No activity · VLM idle',
+    phoneTitle: "Today at Mom's", foot: 'Text only. No video was stored or sent.', sent: 'Sent',
+    shot: 'Frame sent to the on-device VLM', who: 'VLM · on device', describing: 'Describing…',
+    stamp: 'Frame deleted · only this line is kept', note: 'Video shown for this demo only. HomeLog never stores or sends it.',
+  };
+  $('shotLabel').textContent = T.shot; $('capStamp').textContent = T.stamp; $('demoNote').textContent = T.note;
+  $('sub').textContent = T.sub; $('tag').textContent = T.tag; $('logTitle').textContent = T.logTitle;
+  $('logNote').textContent = T.logNote; $('idleSub').textContent = T.idleSub; $('phoneFoot').textContent = T.foot;
+  $('credit').textContent = D.meta.footage_credit || '';
+  $('models').textContent = D.meta.stub ? 'Backend: stub (placeholder text)' :
+    `VLM ${D.meta.vlm_model} · LLM ${D.meta.llm_model} · avg ${D.meta.avg_describe_ms} ms per frame`;
+  if (D.meta.stub) $('stub').style.display = 'block';
+
+  const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+  const fmt = m => { m = Math.round(m); return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  const video = $('video'), entriesEl = $('entries');
+  let speed = 1, running = false, timers = [];
+
+  function addEntry(e) {
+    const div = document.createElement('div');
+    if (e.kind === 'idle') {
+      div.className = 'entry idle-row';
+      div.innerHTML = `<div class="row"><time>${e.clock}</time><p>→ ${e.until} · ${T.idleRow}</p></div>`;
+    } else {
+      div.className = 'entry' + (e.alert ? ' alert' : '');
+      div.innerHTML = `<div class="row"><time>${e.clock}</time><p></p></div>
+        <div class="meta"><span class="badge">${T.deleted}</span>${e.latency_ms != null && !D.meta.stub ? `<span>${e.latency_ms} ms</span>` : ''}</div>`;
+      div.querySelector('p').textContent = e.text;
+      entriesEl.querySelectorAll('.fresh').forEach(x => x.classList.remove('fresh'));
+      div.classList.add('fresh');
+    }
+    entriesEl.appendChild(div);
+    entriesEl.scrollTop = entriesEl.scrollHeight;
+  }
+
+  const wait = ms => new Promise(r => timers.push(setTimeout(r, ms / speed)));
+
+  async function playIdle(seg, i) {
+    video.pause(); video.style.visibility = 'hidden';
+    $('idle').style.display = 'flex'; $('room').innerHTML = '&nbsp;';
+    const idleEntry = D.entries.find(e => e.kind === 'idle' && e.segment === i);
+    if (idleEntry) addEntry(idleEntry);
+    const a = toMin(seg.from), b = toMin(seg.to), steps = 40;
+    for (let k = 0; k <= steps; k++) {
+      const m = a + (b - a) * k / steps;
+      $('clock').textContent = fmt(m); $('idleBig').textContent = `${seg.from} → ${fmt(m)}`;
+      await wait(3200 / steps);
+    }
+    $('idle').style.display = 'none';
+  }
+
+  // Freeze on the analysed frame, show what the VLM wrote about it, then mark the frame deleted.
+  async function capture(e) {
+    const stage = document.querySelector('.stage');
+    stage.classList.add('frozen');
+    $('flash').style.opacity = .4; setTimeout(() => $('flash').style.opacity = 0, 160);
+    $('shot').classList.add('on');
+    $('caption').style.display = 'block';
+    $('capStamp').classList.remove('on');
+    const ms = !D.meta.stub && e.latency_ms != null ? ` · ${(e.latency_ms / 1000).toFixed(1)} s` : '';
+    $('capWho').textContent = T.who + ms;
+    $('capTxt').textContent = T.describing;
+    await wait(500);
+    $('capTxt').textContent = '';
+    for (let k = 1; k <= e.text.length; k++) { $('capTxt').textContent = e.text.slice(0, k); await wait(18); }
+    await wait(300);
+    $('shot').classList.remove('on');
+    $('capStamp').classList.add('on');
+    addEntry(e);
+    await wait(1100);
+    $('caption').style.display = 'none';
+    stage.classList.remove('frozen');
+  }
+
+  function playVideo(seg, i) {
+    return new Promise(resolve => {
+      const list = D.entries.filter(e => e.kind === 'observation' && e.segment === i);
+      let next = 0, busy = false;
+      const a = toMin(seg.clock), b = toMin(seg.until || seg.clock);
+      video.style.visibility = 'visible';
+      video.src = '../' + seg.file; video.playbackRate = speed;
+      $('room').textContent = seg.label || '';
+      video.ontimeupdate = async () => {
+        if (busy) return;
+        const t = video.currentTime, dur = seg.duration || video.duration || 1;
+        $('clock').textContent = fmt(a + (b - a) * Math.min(1, t / dur));
+        if (next < list.length && list[next].video_t <= t + 0.05) {
+          busy = true; video.pause();
+          video.currentTime = list[next].video_t;  // show exactly the frame the VLM saw
+          await capture(list[next++]);
+          busy = false;
+          if (!video.ended) { video.playbackRate = speed; video.play(); }
+        }
+      };
+      video.onended = async () => {
+        while (busy) await wait(100);
+        while (next < list.length) await capture(list[next++]);
+        resolve();
+      };
+      video.play();
+    });
+  }
+
+  function showSummary() {
+    $('phoneTitle').textContent = zh ? `今天的${D.meta.scenario.includes("Mom") ? '媽媽' : ''}近況` : T.phoneTitle;
+    $('summary').textContent = D.summary.text;
+    const f = $('flags'); f.innerHTML = '';
+    (D.summary.flags || []).forEach(x => { const d = document.createElement('div'); d.className = 'flag'; d.textContent = x; f.appendChild(d); });
+    $('sentAt').textContent = `${T.sent} ${D.meta.report_at || ''}`;
+    $('clock').textContent = D.meta.report_at || $('clock').textContent;
+    $('phoneWrap').style.display = 'flex';
+  }
+
+  async function run() {
+    if (running) return; running = true;
+    for (let i = 0; i < D.segments.length; i++) {
+      const s = D.segments[i];
+      if (s.type === 'idle') await playIdle(s, i); else await playVideo(s, i);
+      await wait(500);
+    }
+    await wait(1200);
+    showSummary();
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout); timers = []; running = false;
+    video.pause(); video.removeAttribute('src'); video.load();
+    entriesEl.innerHTML = ''; $('phoneWrap').style.display = 'none'; $('idle').style.display = 'none';
+    $('clock').textContent = D.segments[0].clock || D.segments[0].from;
+  }
+
+  $('start').onclick = () => { $('controls').classList.add('hidden'); run(); };
+  $('speed').onchange = e => { speed = Number(e.target.value); video.playbackRate = speed; };
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); $('controls').classList.add('hidden'); run(); }
+    if (e.key === 'r' || e.key === 'R') { reset(); $('controls').classList.remove('hidden'); }
+    if (e.key === 'h' || e.key === 'H') $('controls').classList.toggle('hidden');
+  });
+  reset();
+})();
+</script>
+</body>
+</html>

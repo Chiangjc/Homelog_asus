@@ -1,0 +1,21 @@
+# Never commit footage, logs or keys
+samples/
+data/
+demo/data/
+*.mp4
+*.mov
+*.webm
+*.jpg
+*.png
+.homelog/
+
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# Video editing temp files and audio
+_edit*/
+*.wav
+*.m4a
+*.mp3

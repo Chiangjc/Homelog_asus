@@ -1,0 +1,24 @@
+# A normal morning: every clip used once, back to back, no idle gaps.
+# Breakfast is seen and nothing is wrong, so this shows the update a family
+# gets on an ordinary day. Run: python run_day.py --scenario scenarios/normal_day.yaml
+# The bathroom clip (etri_10) is left out on purpose: HomeLog is not meant
+# to be installed in a bathroom.
+
+title: "An ordinary morning at Mom's"
+report_at: "08:45"
+footage_credit: "Footage: ETRI-Activity3D sample videos (ETRI), faces blurred by the dataset authors."
+
+routine:
+  name: Mom
+  awake_from: "07:00"
+  awake_to: "22:00"
+  inactivity_alert_minutes: 180
+  meals:
+    - {name: breakfast, from: "07:00", to: "09:00"}
+    - {name: lunch,     from: "11:30", to: "13:30"}
+    - {name: dinner,    from: "17:30", to: "19:30"}
+
+segments:
+  - {type: video, clock: "07:30", span_minutes: 15, file: samples/etri/etri_1.mp4,  label: "Living room"}
+  - {type: video, clock: "07:45", span_minutes: 30, file: samples/etri/etri_24.mp4, label: "Living room"}
+  - {type: video, clock: "08:15", span_minutes: 30, file: samples/etri/etri_29.mp4, label: "Living room"}
